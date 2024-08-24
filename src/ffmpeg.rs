@@ -235,7 +235,7 @@ impl VCodecSpecific for Arc<str> {
             e if e.ends_with("_nvenc") => {
                 match pix_fmt {
                     PixelFormat::Yuv420p => Ok(vec![]),
-                    PixelFormat::Yuv420p10le => Ok(vec!["-highbitdepth"]),
+                    PixelFormat::Yuv420p10le => Ok(vec!["-highbitdepth", "1"]),
                     PixelFormat::Yuv444p10le => Err(anyhow::anyhow!("YUV444P10LE not supported by nvenc")),
                 }
             },
