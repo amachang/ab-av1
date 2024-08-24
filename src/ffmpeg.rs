@@ -89,11 +89,12 @@ pub fn encode_sample(
     cmd.kill_on_drop(true)
         .arg("-y")
         .args(input_args.iter().map(|a| &**a))
+        .args(vcodec.additional_input_args())
         .arg2("-i", input)
         .arg2("-c:v", &*vcodec)
         .args(output_args.iter().map(|a| &**a))
         .arg2(vcodec.crf_arg(), crf)
-        .arg2("-pix_fmt", pix_fmt.as_str())
+        .args(vcodec.pix_fmt_args(&pix_fmt)?)
         .arg2_opt(vcodec.preset_arg(), preset)
         .arg2_opt("-vf", vfilter)
         .arg("-an")
@@ -152,13 +153,14 @@ pub fn encode(
     cmd.kill_on_drop(true)
         .args(input_args.iter().map(|a| &**a))
         .arg("-y")
+        .args(vcodec.additional_input_args())
         .arg2("-i", input)
         .arg2("-map", map)
         .arg2("-c:v", "copy")
         .arg2("-c:v:0", &*vcodec)
         .args(output_args.iter().map(|a| &**a))
         .arg2(vcodec.crf_arg(), crf)
-        .arg2("-pix_fmt", pix_fmt.as_str())
+        .args(vcodec.pix_fmt_args(&pix_fmt)?)
         .arg2_opt(vcodec.preset_arg(), preset)
         .arg2_opt("-vf", vfilter)
         .arg2("-c:s", "copy")
@@ -193,6 +195,10 @@ trait VCodecSpecific {
     fn preset_arg(&self) -> &str;
     /// Arg to use crf values with, normally `-crf`.
     fn crf_arg(&self) -> &str;
+    // Arg to use for output format
+    fn additional_input_args(&self) -> Vec<&str>;
+    // Arg for pix_fmt
+    fn pix_fmt_args(&self, pix_fmt: &PixelFormat) -> anyhow::Result<Vec<&str>>;
 }
 impl VCodecSpecific for Arc<str> {
     fn preset_arg(&self) -> &str {
@@ -216,4 +222,34 @@ impl VCodecSpecific for Arc<str> {
             _ => "-crf",
         }
     }
+
+    fn additional_input_args(&self) -> Vec<&str> {
+        match &** self {
+            e if e.ends_with("_nvenc") => cuda_output_format_input_args(),
+            _ => vec![],
+        }
+    }
+
+    fn pix_fmt_args(&self, pix_fmt: &PixelFormat) -> anyhow::Result<Vec<&str>> {
+        match &**self {
+            e if e.ends_with("_nvenc") => {
+                match pix_fmt {
+                    PixelFormat::Yuv420p => Ok(vec![]),
+                    PixelFormat::Yuv420p10le => Ok(vec!["-highbitdepth"]),
+                    PixelFormat::Yuv444p10le => Err(anyhow::anyhow!("YUV444P10LE not supported by nvenc")),
+                }
+            },
+            _ => Ok(vec!["-pix_fmt", pix_fmt.as_str()]),
+        }
+    }
 }
+
+fn cuda_output_format_input_args() -> Vec<&'static str> {
+    vec![
+        "-hwaccel", "cuda",
+        "-hwaccel_output_format", "cuda",
+    ]
+}
+
+
+
