@@ -171,7 +171,7 @@ impl Vmaf {
     }
 
     fn cuda_output_format_input_args(&self) -> Vec<&str> {
-        vec!["-hwaccel_output_format", "cuda"]
+        vec!["-hwaccel", "cuda", "-hwaccel_output_format", "cuda"]
     }
 
     fn vf_scale(&self, model: VmafModel, distorted_res: Option<(u32, u32)>) -> Option<(i32, i32)> {
