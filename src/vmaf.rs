@@ -13,6 +13,8 @@ pub fn run(
     reference: &Path,
     distorted: &Path,
     filter_complex: &str,
+    distorted_input_args: &[&str],
+    reference_input_args: &[&str],
 ) -> anyhow::Result<impl Stream<Item = VmafOut>> {
     info!(
         "vmaf {} vs reference {}",
@@ -22,7 +24,9 @@ pub fn run(
 
     let mut cmd = Command::new("ffmpeg");
     cmd.kill_on_drop(true)
+        .args(distorted_input_args)
         .arg2("-i", distorted)
+        .args(reference_input_args)
         .arg2("-i", reference)
         .arg2("-filter_complex", filter_complex)
         .arg2("-f", "null")

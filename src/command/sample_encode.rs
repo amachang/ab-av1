@@ -243,6 +243,8 @@ pub async fn run(
                             .max(input_pixel_format.unwrap_or(PixelFormat::Yuv444p10le)),
                         args.vfilter.as_deref(),
                     ),
+                    &vmaf.reference_input_args(),
+                    &vmaf.distorted_input_args(),
                 )?);
                 let mut logger = ProgressLogger::new("ab_av1::vmaf", Instant::now());
                 let mut vmaf_score = None;

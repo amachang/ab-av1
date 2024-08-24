@@ -74,6 +74,8 @@ pub async fn vmaf(
             dpix_fmt.max(rpix_fmt),
             vmaf.reference_vfilter.as_deref(),
         ),
+        &vmaf.reference_input_args(),
+        &vmaf.distorted_input_args(),
     )?);
     let mut logger = ProgressLogger::new(module_path!(), Instant::now());
     let mut vmaf_score = None;
