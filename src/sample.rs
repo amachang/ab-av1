@@ -27,14 +27,15 @@ pub async fn copy(
     }
 
     let mut dest = temporary::process_dir(temp_dir);
+
+    let mut input_path_hasher = blake3::Hasher::new();
+    input_path_hasher.update(input.to_string_lossy().as_bytes());
+    let input_path_hash = input_path_hasher.finalize();
+    let input_path_hash_str = input_path_hash.to_hex();
+
     // Always using mkv for the samples works better than, e.g. using mp4 for mp4s
     // see https://github.com/alexheretic/ab-av1/issues/82#issuecomment-1337306325
-    dest.push(
-        input
-            .with_extension(format!("sample{sample_start_s}+{frames}f.mkv"))
-            .file_name()
-            .unwrap(),
-    );
+    dest.push(format!("{input_path_hash_str}.sample{sample_start_s}+{frames}f.mkv"));
     if dest.exists() {
         return Ok(dest);
     }
